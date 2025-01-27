@@ -27,7 +27,7 @@ import org.slf4j.LoggerFactory;
  * node to iQuery
  *
  */
-public class OpenInCytoscapeWebTaskFactoryImpl extends AbstractNodeViewTaskFactory implements NetworkViewTaskFactory, NetworkCollectionTaskFactory {
+public class OpenInCytoscapeWebTaskFactoryImpl extends AbstractTaskFactory implements NetworkCollectionTaskFactory {
 
 	public static final int MAX_RAW_DATA_LEN = 20;
 	public static final int MAX_RAW_COL_LEN = 20;
@@ -51,7 +51,9 @@ public class OpenInCytoscapeWebTaskFactoryImpl extends AbstractNodeViewTaskFacto
 		this._deskTopUtil = deskTopUtil;
 	}
 
-	@Override
+	
+	
+
 	public TaskIterator createTaskIterator(CyNetworkView networkView) {
 		
         boolean openWebBrowserRes = true;
@@ -85,48 +87,26 @@ public class OpenInCytoscapeWebTaskFactoryImpl extends AbstractNodeViewTaskFacto
 		}
 		return true;
 	}
+
+	@Override
+	public boolean isReady() {
+		return _appManager.getCurrentNetwork() != null;
+	}
 	
-	/**
-	 * Lets caller know if this task can be invoked via 
-	 * {@link #createTaskIterator(org.cytoscape.view.model.CyNetworkView) }
-	 * @param networkView
-	 * @return true if network is in view
-	 */
-	@Override
-	public boolean isReady(CyNetworkView networkView) {
-		if (networkView != null && networkView.getModel() != null) {
-
-			return true;
-		}
-		return false;
-	}
 
 	@Override
-	public TaskIterator createTaskIterator(View<CyNode> nodeView, CyNetworkView networkView) {
-		return this.createTaskIterator(networkView);
-	}
-
-	/**
-	 * Just calls {@link #isReady(org.cytoscape.view.model.CyNetworkView) } ignoring
-	 * {@code nodeView}
-	 * @param nodeView This is ignored
-	 * @param networkView
-	 * @return See {@link #isReady(org.cytoscape.view.model.CyNetworkView) } for 
-	 *         return information
-	 */
-	@Override
-	public boolean isReady(View<CyNode> nodeView, CyNetworkView networkView) {
-		return this.isReady(networkView);
-	}
-
-	@Override
-	public TaskIterator createTaskIterator(Collection<CyNetwork> clctn) {
-		throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+	public TaskIterator createTaskIterator() {
+		return this.createTaskIterator(_appManager.getCurrentNetworkView());
 	}
 
 	@Override
 	public boolean isReady(Collection<CyNetwork> clctn) {
 		return _appManager.getCurrentNetwork() != null && clctn.size() == 1;
+	}
+
+	@Override
+	public TaskIterator createTaskIterator(Collection<CyNetwork> clctn) {
+		return this.createTaskIterator(_appManager.getCurrentNetworkView());
 	}
 	
 }
