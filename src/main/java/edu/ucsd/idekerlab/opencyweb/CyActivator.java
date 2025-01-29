@@ -12,10 +12,8 @@ import org.cytoscape.application.CyApplicationManager;
 import org.cytoscape.application.swing.CySwingApplication;
 import org.cytoscape.property.CyProperty;
 import org.cytoscape.service.util.AbstractCyActivator;
+import org.cytoscape.task.NetworkCollectionTaskFactory;
 import static org.cytoscape.work.ServiceProperties.IN_NETWORK_PANEL_CONTEXT_MENU;
-import static org.cytoscape.work.ServiceProperties.MENU_GRAVITY;
-import static org.cytoscape.work.ServiceProperties.PREFERRED_MENU;
-import org.cytoscape.work.TaskFactory;
 import org.osgi.framework.BundleContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -54,15 +52,7 @@ public class CyActivator extends AbstractCyActivator {
 		openMenuProps.setProperty(IN_NETWORK_PANEL_CONTEXT_MENU, "true");
 		openMenuProps.setProperty(ENABLE_FOR, "network");
 		OpenInCytoscapeWebTaskFactoryImpl openFac = new OpenInCytoscapeWebTaskFactoryImpl(appManager, swingApplication, dialogUtil);
-		registerAllServices(bc, openFac, openMenuProps);
-		
-
-		final Properties networkToCytoWeb = new Properties();
-
-		networkToCytoWeb.setProperty(PREFERRED_MENU, "File.Export");
-		networkToCytoWeb.setProperty(MENU_GRAVITY, "0.0");
-		networkToCytoWeb.setProperty(TITLE, "Network to Cytoscape Web");
-		registerService(bc, openFac, TaskFactory.class, networkToCytoWeb);
+		registerService(bc, openFac, NetworkCollectionTaskFactory.class, openMenuProps);
 		
 	}
 
