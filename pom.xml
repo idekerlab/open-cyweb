@@ -160,6 +160,35 @@
                                     </execution>
                                 </executions>
                             </plugin>
+                            <plugin>
+                                <groupId>com.diffplug.spotless</groupId>
+                                <artifactId>spotless-maven-plugin</artifactId>
+                                <version>2.43.0</version>
+                                <configuration>
+                                    <java>
+                                        <!-- Format Java files -->
+                                        <googleJavaFormat>
+                                            <version>1.17.0</version>
+                                            <style>AOSP</style>
+                                        </googleJavaFormat>
+                                        <!-- Organize imports - matches VS Code java.completion.importOrder -->
+                                        <importOrder>
+                                            <order>java,javax,org,com,\\#,edu.ucsd,org.cytoscape,\\#,\\#</order>
+                                        </importOrder>
+                                        <!-- Remove unused imports -->
+                                        <removeUnusedImports />
+                                    </java>
+                                </configuration>
+                                <executions>
+                                    <execution>
+                                        <goals>
+                                            <!-- Check formatting during verify phase (runs before install) -->
+                                            <goal>check</goal>
+                                        </goals>
+                                        <phase>verify</phase>
+                                    </execution>
+                                </executions>
+                            </plugin>
 		</plugins>
 		<pluginManagement>
 			<plugins>

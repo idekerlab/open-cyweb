@@ -62,6 +62,29 @@ The above command will create a jar file under **target/** named
 into [Cytoscape][cytoscape]
 
 
+Code Formatting
+====================
+
+This project uses [Spotless](https://github.com/diffplug/spotless) for code formatting
+and import organization.
+
+**Format your code manually:**
+```Bash
+# Format all Java files and organize imports
+mvn spotless:apply
+```
+
+**Check code formatting:**
+```Bash
+# Verify code is properly formatted (fails if not)
+mvn spotless:check
+```
+
+**Note:** The build process automatically runs `spotless:check` during the verify phase.
+If your code is not properly formatted, the build will fail. Run `mvn spotless:apply`
+to fix formatting issues before committing.
+
+
 Open Cytoscape and follow instructions <TODO> and click on
 **Install from File...** button to load the jar created above.
 
