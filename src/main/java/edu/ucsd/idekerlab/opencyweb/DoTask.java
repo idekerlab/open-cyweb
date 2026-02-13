@@ -11,7 +11,6 @@ import edu.ucsd.idekerlab.opencyweb.util.ShowDialogUtil;
 import org.cytoscape.application.swing.CySwingApplication;
 import org.cytoscape.model.CyNetwork;
 import org.cytoscape.work.AbstractTask;
-import org.cytoscape.work.TaskIterator;
 import org.cytoscape.work.TaskMonitor;
 
 /**
@@ -55,16 +54,6 @@ public class DoTask extends AbstractTask {
         String suidStr = Long.toString(network.getSUID());
         LOGGER.info("Opening Network SUID: " + suidStr);
         runQueryOnWebBrowser(cytowebUrl);
-    }
-
-    @Override
-    public void cancel() {
-        super.cancel();
-    }
-
-    @Override
-    public TaskIterator getTaskIterator() {
-        return super.getTaskIterator();
     }
 
     private void runQueryOnWebBrowser(String cytowebUrl) throws Exception {

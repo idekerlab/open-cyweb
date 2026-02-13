@@ -22,15 +22,11 @@ import org.cytoscape.work.TaskIterator;
 public class OpenInCytoscapeWebTaskFactoryImpl extends AbstractTaskFactory
         implements NetworkCollectionTaskFactory {
 
-    public static final int MAX_RAW_DATA_LEN = 20;
-    public static final int MAX_RAW_COL_LEN = 20;
-
     // Cytoscape Web URL template - ${network_suid} is placeholder for network SUID
     // TODO - refactor this to externalized property
     private static final String CYTOSCAPE_WEB_URL_TEMPLATE =
             "https://web.cytoscape.org?import=http://localhost:1234/v1/networks/${network_suid}.cx?version=2";
     private CyApplicationManager appManager;
-    private DoTask doTask;
     private ShowDialogUtil dialogUtil;
     private CySwingApplication swingApplication;
 
@@ -70,14 +66,22 @@ public class OpenInCytoscapeWebTaskFactoryImpl extends AbstractTaskFactory
         return this.createTaskIterator(appManager.getCurrentNetworkView());
     }
 
+    /**
+     * Creates a TaskIterator for opening the current network in Cytoscape Web. The URL is
+     * constructed using the network's SUID and the predefined URL template. If the URL is
+     * malformed, an error dialog will be shown.
+     *
+     * @param networkView The CyNetworkView for which to create the task
+     * @return TaskIterator containing the DoTask to open the network in Cytoscape Web
+     */
     public TaskIterator createTaskIterator(CyNetworkView networkView) {
-        doTask =
+        DoTask doTask =
                 new DoTask(
                         swingApplication,
                         dialogUtil,
                         Desktop.getDesktop(),
                         networkView.getModel(),
-                        buildCytoscapeWebURI(appManager.getCurrentNetwork().getSUID()));
+                        buildCytoscapeWebURI(networkView.getModel().getSUID()));
         return new TaskIterator(doTask);
     }
 
