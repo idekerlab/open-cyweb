@@ -7,8 +7,6 @@ import javax.swing.ImageIcon;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import edu.ucsd.idekerlab.opencyweb.query.OpenInCytoscapeWebTaskFactoryImpl;
-
 import org.cytoscape.application.CyApplicationManager;
 import org.cytoscape.application.swing.AbstractCyAction;
 import org.cytoscape.application.swing.CySwingApplication;
@@ -25,17 +23,17 @@ import org.cytoscape.work.swing.DialogTaskManager;
  * Toolbar action to open current network in Cytoscape Web. Enabled only when exactly one network is
  * open.
  */
-public class OpenInCytoscapeWebAction extends AbstractCyAction
+public class OpenCytoscapeWebToolbar extends AbstractCyAction
         implements NetworkAddedListener, NetworkDestroyedListener {
 
     private static final long serialVersionUID = 1L;
-    private static final Logger LOGGER = LoggerFactory.getLogger(OpenInCytoscapeWebAction.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(OpenCytoscapeWebToolbar.class);
 
     private final CyApplicationManager appManager;
     private final OpenInCytoscapeWebTaskFactoryImpl taskFactory;
     private final DialogTaskManager taskManager;
 
-    public OpenInCytoscapeWebAction(
+    public OpenCytoscapeWebToolbar(
             CyApplicationManager appManager,
             CySwingApplication swingApplication,
             OpenInCytoscapeWebTaskFactoryImpl taskFactory,

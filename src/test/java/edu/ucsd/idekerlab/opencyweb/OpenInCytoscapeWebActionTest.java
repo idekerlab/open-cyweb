@@ -10,8 +10,6 @@ import java.awt.event.ActionEvent;
 
 import org.junit.Test;
 
-import edu.ucsd.idekerlab.opencyweb.query.OpenInCytoscapeWebTaskFactoryImpl;
-
 import org.cytoscape.application.CyApplicationManager;
 import org.cytoscape.application.swing.CySwingApplication;
 import org.cytoscape.view.model.CyNetworkView;
@@ -35,8 +33,8 @@ public class OpenInCytoscapeWebActionTest {
         when(mockAppManager.getCurrentNetworkView()).thenReturn(null);
 
         // Create action
-        OpenInCytoscapeWebAction action =
-                new OpenInCytoscapeWebAction(
+        OpenCytoscapeWebToolbar action =
+                new OpenCytoscapeWebToolbar(
                         mockAppManager, mockSwingApp, mockTaskFactory, mockTaskManager);
 
         // Execute actionPerformed
@@ -66,8 +64,8 @@ public class OpenInCytoscapeWebActionTest {
         when(mockTaskFactory.createTaskIterator(mockNetworkView)).thenReturn(realTaskIterator);
 
         // Create action
-        OpenInCytoscapeWebAction action =
-                new OpenInCytoscapeWebAction(
+        OpenCytoscapeWebToolbar action =
+                new OpenCytoscapeWebToolbar(
                         mockAppManager, mockSwingApp, mockTaskFactory, mockTaskManager);
 
         // Execute actionPerformed

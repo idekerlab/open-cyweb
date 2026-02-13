@@ -1,9 +1,8 @@
-package edu.ucsd.idekerlab.opencyweb.query;
+package edu.ucsd.idekerlab.opencyweb;
 
+import java.awt.Desktop;
 import java.util.Collection;
 
-import edu.ucsd.idekerlab.opencyweb.DoTask;
-import edu.ucsd.idekerlab.opencyweb.util.DesktopUtil;
 import edu.ucsd.idekerlab.opencyweb.util.ShowDialogUtil;
 
 import org.cytoscape.application.CyApplicationManager;
@@ -32,7 +31,6 @@ public class OpenInCytoscapeWebTaskFactoryImpl extends AbstractTaskFactory
             "https://web.cytoscape.org?import=http://localhost:1234/v1/networks/${network_suid}.cx?version=2";
     private CyApplicationManager appManager;
     private DoTask doTask;
-    private DesktopUtil deskTopUtil;
     private ShowDialogUtil dialogUtil;
     private CySwingApplication swingApplication;
 
@@ -50,7 +48,6 @@ public class OpenInCytoscapeWebTaskFactoryImpl extends AbstractTaskFactory
         this.appManager = appManager;
         this.swingApplication = swingApplication;
         this.dialogUtil = dialogUtil;
-        deskTopUtil = new DesktopUtil();
     }
 
     @Override
@@ -73,16 +70,12 @@ public class OpenInCytoscapeWebTaskFactoryImpl extends AbstractTaskFactory
         return this.createTaskIterator(appManager.getCurrentNetworkView());
     }
 
-    protected void setAlternateDesktopUtil(DesktopUtil deskTopUtil) {
-        this.deskTopUtil = deskTopUtil;
-    }
-
     public TaskIterator createTaskIterator(CyNetworkView networkView) {
         doTask =
                 new DoTask(
                         swingApplication,
                         dialogUtil,
-                        deskTopUtil,
+                        Desktop.getDesktop(),
                         networkView.getModel(),
                         buildCytoscapeWebURI(appManager.getCurrentNetwork().getSUID()));
         return new TaskIterator(doTask);

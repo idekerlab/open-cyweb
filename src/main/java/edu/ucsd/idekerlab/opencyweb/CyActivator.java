@@ -11,7 +11,6 @@ import org.osgi.framework.BundleContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import edu.ucsd.idekerlab.opencyweb.query.OpenInCytoscapeWebTaskFactoryImpl;
 import edu.ucsd.idekerlab.opencyweb.util.ShowDialogUtil;
 
 import org.cytoscape.app.event.AppsFinishedStartingEvent;
@@ -80,8 +79,8 @@ public class CyActivator extends AbstractCyActivator {
         registerService(bundleContext, openFac, NetworkCollectionTaskFactory.class, openMenuProps);
 
         // Create and register toolbar action
-        OpenInCytoscapeWebAction toolbarAction =
-                new OpenInCytoscapeWebAction(appManager, swingApplication, openFac, taskManager);
+        OpenCytoscapeWebToolbar toolbarAction =
+                new OpenCytoscapeWebToolbar(appManager, swingApplication, openFac, taskManager);
         registerService(bundleContext, toolbarAction, CyAction.class, new Properties());
 
         // Register the toolbar action as a network listener to update enabled state

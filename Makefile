@@ -7,7 +7,7 @@ help: ## show this help message
 clean: ## run mvn clean
 	mvn clean
 
-test: ## run tests with mvn test
+test: clean## run tests with mvn test
 	mvn test
 
 coverage: ## check code coverage with jacoco (report: target/site/jacoco/index.html)

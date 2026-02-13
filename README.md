@@ -53,8 +53,8 @@ Commands below assume [Git][git] command line tools have been installed
 # Can also just download repo and unzip it
 git clone https://github.com/idekerlab/open-cyweb
 
-cd webbymcsearch
-mvn clean test install
+cd open-cyweb
+make install
 ```
 
 The above command will create a jar file under **target/** named

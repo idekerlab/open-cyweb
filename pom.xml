@@ -182,10 +182,10 @@
                                 <executions>
                                     <execution>
                                         <goals>
-                                            <!-- Check formatting during verify phase (runs before install) -->
+                                            <!-- Check formatting during test phase -->
                                             <goal>check</goal>
                                         </goals>
-                                        <phase>verify</phase>
+                                        <phase>test</phase>
                                     </execution>
                                 </executions>
                             </plugin>
