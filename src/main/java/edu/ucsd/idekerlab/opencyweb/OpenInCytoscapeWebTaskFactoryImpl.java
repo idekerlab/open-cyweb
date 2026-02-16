@@ -4,6 +4,8 @@ import java.awt.Desktop;
 import java.util.Collection;
 import java.util.Properties;
 
+import javax.swing.JOptionPane;
+
 import edu.ucsd.idekerlab.opencyweb.util.ShowDialogUtil;
 
 import org.cytoscape.application.CyApplicationManager;
@@ -31,6 +33,12 @@ public class OpenInCytoscapeWebTaskFactoryImpl extends AbstractTaskFactory
     // Property keys (short names, scoped under the "opencyweb" CyProperty group)
     static final String PROP_CYREST_PORT = "cyrest.port";
     static final String PROP_CYTOSCAPE_WEB_BASE_URL = "cytoscapeweb.baseurl";
+
+    // Network size limit property keys and defaults
+    static final String PROP_MAX_NODES = "network.max-nodes";
+    static final String PROP_MAX_EDGES = "network.max-edges";
+    private static final int DEFAULT_MAX_NODES = 10000;
+    private static final int DEFAULT_MAX_EDGES = 20000;
 
     // Default values matching opencyweb.props defaults
     private static final String DEFAULT_CYREST_PORT = "1234";
@@ -89,14 +97,65 @@ public class OpenInCytoscapeWebTaskFactoryImpl extends AbstractTaskFactory
      * @return TaskIterator containing the DoTask to open the network in Cytoscape Web
      */
     public TaskIterator createTaskIterator(CyNetworkView networkView) {
+        CyNetwork network = networkView.getModel();
+
+        String validationError = validateNetworkSize(network);
+        if (validationError != null) {
+            dialogUtil.showMessageDialog(
+                    swingApplication.getJFrame(),
+                    validationError,
+                    "Open in Cytoscape Web",
+                    JOptionPane.ERROR_MESSAGE);
+            return new TaskIterator();
+        }
+
         DoTask doTask =
                 new DoTask(
                         swingApplication,
                         dialogUtil,
                         Desktop.getDesktop(),
-                        networkView.getModel(),
-                        buildCytoscapeWebURI(networkView.getModel().getSUID()));
+                        network,
+                        buildCytoscapeWebURI(network.getSUID()));
         return new TaskIterator(doTask);
+    }
+
+    /**
+     * Validates that the network does not exceed the configured node and edge limits for web-based
+     * rendering.
+     *
+     * @param network The network to validate
+     * @return null if the network is within limits, or an error message string if exceeded
+     */
+    String validateNetworkSize(CyNetwork network) {
+        Properties props = cyProperties.getProperties();
+        int maxNodes =
+                Integer.parseInt(
+                        props.getProperty(PROP_MAX_NODES, String.valueOf(DEFAULT_MAX_NODES)));
+        int maxEdges =
+                Integer.parseInt(
+                        props.getProperty(PROP_MAX_EDGES, String.valueOf(DEFAULT_MAX_EDGES)));
+
+        int nodeCount = network.getNodeCount();
+        int edgeCount = network.getEdgeCount();
+
+        boolean nodesExceeded = nodeCount > maxNodes;
+        boolean edgesExceeded = edgeCount > maxEdges;
+
+        if (!nodesExceeded && !edgesExceeded) {
+            return null;
+        }
+
+        StringBuilder msg = new StringBuilder();
+        msg.append("The selected network exceeds the threshold limits for web-based rendering.");
+        if (nodesExceeded) {
+            msg.append("\n  Nodes: " + nodeCount + " (max: " + maxNodes + ")");
+        }
+        if (edgesExceeded) {
+            msg.append("\n  Edges: " + edgeCount + " (max: " + maxEdges + ")");
+        }
+        msg.append(
+                "\n\nYou can adjust these limits in Edit > Preferences > Properties (opencyweb).");
+        return msg.toString();
     }
 
     String buildCytoscapeWebURI(Long networkSuid) {

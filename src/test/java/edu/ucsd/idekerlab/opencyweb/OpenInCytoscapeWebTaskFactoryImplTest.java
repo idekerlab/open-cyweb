@@ -1,6 +1,9 @@
 package edu.ucsd.idekerlab.opencyweb;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -12,6 +15,7 @@ import edu.ucsd.idekerlab.opencyweb.util.ShowDialogUtil;
 
 import org.cytoscape.application.CyApplicationManager;
 import org.cytoscape.application.swing.CySwingApplication;
+import org.cytoscape.model.CyNetwork;
 import org.cytoscape.property.CyProperty;
 
 public class OpenInCytoscapeWebTaskFactoryImplTest {
@@ -63,5 +67,70 @@ public class OpenInCytoscapeWebTaskFactoryImplTest {
         assertEquals(
                 "https://web.cytoscape.org?import=http://localhost:9999/v1/networks/100.cx?version=2",
                 url);
+    }
+
+    private CyNetwork createMockNetwork(int nodeCount, int edgeCount) {
+        CyNetwork mockNetwork = mock(CyNetwork.class);
+        when(mockNetwork.getNodeCount()).thenReturn(nodeCount);
+        when(mockNetwork.getEdgeCount()).thenReturn(edgeCount);
+        return mockNetwork;
+    }
+
+    @Test
+    public void testValidateNetworkSizeWithinLimits() {
+        Properties props = new Properties();
+        OpenInCytoscapeWebTaskFactoryImpl factory = createFactory(props);
+
+        assertNull(factory.validateNetworkSize(createMockNetwork(100, 200)));
+    }
+
+    @Test
+    public void testValidateNetworkSizeExceedsMaxNodes() {
+        Properties props = new Properties();
+        OpenInCytoscapeWebTaskFactoryImpl factory = createFactory(props);
+
+        String error = factory.validateNetworkSize(createMockNetwork(10001, 100));
+        assertNotNull(error);
+        assertTrue(error.contains("Nodes: 10001"));
+        assertTrue(error.contains("max: 10000"));
+    }
+
+    @Test
+    public void testValidateNetworkSizeExceedsMaxEdges() {
+        Properties props = new Properties();
+        OpenInCytoscapeWebTaskFactoryImpl factory = createFactory(props);
+
+        String error = factory.validateNetworkSize(createMockNetwork(100, 20001));
+        assertNotNull(error);
+        assertTrue(error.contains("Edges: 20001"));
+        assertTrue(error.contains("max: 20000"));
+    }
+
+    @Test
+    public void testValidateNetworkSizeExceedsBoth() {
+        Properties props = new Properties();
+        OpenInCytoscapeWebTaskFactoryImpl factory = createFactory(props);
+
+        String error = factory.validateNetworkSize(createMockNetwork(10001, 20001));
+        assertNotNull(error);
+        assertTrue(error.contains("Nodes: 10001"));
+        assertTrue(error.contains("Edges: 20001"));
+    }
+
+    @Test
+    public void testValidateNetworkSizeWithCustomLimits() {
+        Properties props = new Properties();
+        props.setProperty("network.max-nodes", "500");
+        props.setProperty("network.max-edges", "1000");
+        OpenInCytoscapeWebTaskFactoryImpl factory = createFactory(props);
+
+        // Within custom limits
+        assertNull(factory.validateNetworkSize(createMockNetwork(500, 1000)));
+
+        // Exceeds custom limits
+        String error = factory.validateNetworkSize(createMockNetwork(501, 1001));
+        assertNotNull(error);
+        assertTrue(error.contains("max: 500"));
+        assertTrue(error.contains("max: 1000"));
     }
 }
