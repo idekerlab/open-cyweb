@@ -1,5 +1,3 @@
-project.version=${project.version}
-project.name=${project.name}
 cyrest.port=1234
 cytoscapeweb.baseurl=https://web.cytoscape.org
 network.max-nodes=10000
