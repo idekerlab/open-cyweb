@@ -7,8 +7,14 @@ help: ## show this help message
 clean: ## run mvn clean
 	mvn clean
 
-test: clean## run tests with mvn test
+test: clean ## run tests with mvn test
 	mvn test
+
+lint: ## run code linting with Spotless (report: target/site/spotless.html)
+	mvn spotless:check	
+
+lint-fix: ## run code linting with Spotless (report: target/site/spotless.html)
+	mvn spotless:apply		
 
 coverage: ## check code coverage with jacoco (report: target/site/jacoco/index.html)
 	mvn test jacoco:report

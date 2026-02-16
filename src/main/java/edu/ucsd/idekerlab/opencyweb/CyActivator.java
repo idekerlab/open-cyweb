@@ -20,6 +20,8 @@ import org.cytoscape.application.swing.CyAction;
 import org.cytoscape.application.swing.CySwingApplication;
 import org.cytoscape.model.events.NetworkAddedListener;
 import org.cytoscape.model.events.NetworkDestroyedListener;
+import org.cytoscape.property.AbstractConfigDirPropsReader;
+import org.cytoscape.property.CyProperty;
 import org.cytoscape.service.util.AbstractCyActivator;
 import org.cytoscape.task.NetworkCollectionTaskFactory;
 import org.cytoscape.work.swing.DialogTaskManager;
@@ -52,6 +54,17 @@ public class CyActivator extends AbstractCyActivator {
         registerService(bc, listener, AppsFinishedStartingListener.class, new Properties());
     }
 
+    /**
+     * Reads app properties from opencyweb.props bundled in the JAR, then merges any user overrides
+     * from the Cytoscape config directory. Properties are visible and editable via Edit >
+     * Preferences > Properties under the "opencyweb" dropdown.
+     */
+    private static class PropsReader extends AbstractConfigDirPropsReader {
+        PropsReader(String name, String fileName) {
+            super(name, fileName, CyProperty.SavePolicy.CONFIG_DIR);
+        }
+    }
+
     private void initializeApp() {
         LOGGER.info("Starting Open in Cytoscape Web App");
 
@@ -61,14 +74,22 @@ public class CyActivator extends AbstractCyActivator {
                 getService(bundleContext, CyApplicationManager.class);
         final DialogTaskManager taskManager = getService(bundleContext, DialogTaskManager.class);
 
-        // sets up the PropertiesHelper and links it to properties that a user can
-        // view and edit in Edit => Preferences menu
+        // Register app properties so users can view and edit in Edit > Preferences > Properties
+        PropsReader propsReader = new PropsReader("opencyweb", "opencyweb.props");
+        Properties propsReaderServiceProps = new Properties();
+        propsReaderServiceProps.setProperty("cyPropertyName", "opencyweb.props");
+        registerAllServices(bundleContext, propsReader, propsReaderServiceProps);
+
+        @SuppressWarnings("unchecked")
+        CyProperty<Properties> cyProperties =
+                getService(bundleContext, CyProperty.class, "(cyPropertyName=opencyweb.props)");
 
         ShowDialogUtil dialogUtil = new ShowDialogUtil();
 
         // Create task factory for opening networks in Cytoscape Web
         OpenInCytoscapeWebTaskFactoryImpl openFac =
-                new OpenInCytoscapeWebTaskFactoryImpl(appManager, swingApplication, dialogUtil);
+                new OpenInCytoscapeWebTaskFactoryImpl(
+                        appManager, swingApplication, dialogUtil, cyProperties);
 
         // Register right-click context menu action
         Properties openMenuProps = new Properties();
