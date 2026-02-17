@@ -1,13 +1,18 @@
 package edu.ucsd.idekerlab.opencyweb;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.assertFalse;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.contains;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.util.Properties;
+
+import javax.swing.JFrame;
 
 import org.junit.Test;
 
@@ -17,8 +22,22 @@ import org.cytoscape.application.CyApplicationManager;
 import org.cytoscape.application.swing.CySwingApplication;
 import org.cytoscape.model.CyNetwork;
 import org.cytoscape.property.CyProperty;
+import org.cytoscape.view.model.CyNetworkView;
+import org.cytoscape.work.Task;
+import org.cytoscape.work.TaskIterator;
 
 public class OpenInCytoscapeWebTaskFactoryImplTest {
+
+    @SuppressWarnings("unchecked")
+    private OpenInCytoscapeWebTaskFactoryImpl createFactory(
+            Properties props, ShowDialogUtil dialogUtil, CySwingApplication swingApp) {
+        CyApplicationManager mockAppManager = mock(CyApplicationManager.class);
+        CyProperty<Properties> mockCyProps = mock(CyProperty.class);
+        when(mockCyProps.getProperties()).thenReturn(props);
+
+        return new OpenInCytoscapeWebTaskFactoryImpl(
+                mockAppManager, swingApp, dialogUtil, mockCyProps);
+    }
 
     @SuppressWarnings("unchecked")
     private OpenInCytoscapeWebTaskFactoryImpl createFactory(Properties props) {
@@ -31,6 +50,19 @@ public class OpenInCytoscapeWebTaskFactoryImplTest {
         return new OpenInCytoscapeWebTaskFactoryImpl(
                 mockAppManager, mockSwingApp, mockDialogUtil, mockCyProps);
     }
+
+    private CyNetworkView createMockNetworkView(long suid, int nodeCount, int edgeCount) {
+        CyNetwork mockNetwork = mock(CyNetwork.class);
+        when(mockNetwork.getSUID()).thenReturn(suid);
+        when(mockNetwork.getNodeCount()).thenReturn(nodeCount);
+        when(mockNetwork.getEdgeCount()).thenReturn(edgeCount);
+
+        CyNetworkView mockView = mock(CyNetworkView.class);
+        when(mockView.getModel()).thenReturn(mockNetwork);
+        return mockView;
+    }
+
+    // --- URL building tests (existing) ---
 
     @Test
     public void testBuildCytoscapeWebURIWithDefaults() {
@@ -69,68 +101,122 @@ public class OpenInCytoscapeWebTaskFactoryImplTest {
                 url);
     }
 
-    private CyNetwork createMockNetwork(int nodeCount, int edgeCount) {
-        CyNetwork mockNetwork = mock(CyNetwork.class);
-        when(mockNetwork.getNodeCount()).thenReturn(nodeCount);
-        when(mockNetwork.getEdgeCount()).thenReturn(edgeCount);
-        return mockNetwork;
+    // --- Network size validation tests ---
+
+    @Test
+    public void testCreateTaskIteratorWithinNetworkSizeLimits() {
+        ShowDialogUtil mockDialogUtil = mock(ShowDialogUtil.class);
+        CySwingApplication mockSwingApp = mock(CySwingApplication.class);
+        OpenInCytoscapeWebTaskFactoryImpl factory =
+                createFactory(new Properties(), mockDialogUtil, mockSwingApp);
+
+        CyNetworkView mockView = createMockNetworkView(1L, 100, 200);
+        TaskIterator result = factory.createTaskIterator(mockView);
+
+        verify(mockDialogUtil, never()).showMessageDialog(any(), anyString());
+        // Should contain a DoTask (not a NoOpTask)
+        Task task = result.next();
+        assertEquals(DoTask.class, task.getClass());
     }
 
     @Test
-    public void testValidateNetworkSizeWithinLimits() {
-        Properties props = new Properties();
-        OpenInCytoscapeWebTaskFactoryImpl factory = createFactory(props);
+    public void testCreateTaskIteratorExceedsMaxNodes() {
+        ShowDialogUtil mockDialogUtil = mock(ShowDialogUtil.class);
+        CySwingApplication mockSwingApp = mock(CySwingApplication.class);
+        when(mockSwingApp.getJFrame()).thenReturn(mock(JFrame.class));
+        OpenInCytoscapeWebTaskFactoryImpl factory =
+                createFactory(new Properties(), mockDialogUtil, mockSwingApp);
 
-        assertNull(factory.validateNetworkSize(createMockNetwork(100, 200)));
+        CyNetworkView mockView = createMockNetworkView(1L, 10001, 100);
+        TaskIterator result = factory.createTaskIterator(mockView);
+
+        verify(mockDialogUtil).showMessageDialog(any(), contains("Nodes: 10001"));
+        verify(mockDialogUtil).showMessageDialog(any(), contains("max: 10000"));
+        // Should contain a no-op task (not DoTask)
+        Task task = result.next();
+        assertFalse("Expected no-op task, not DoTask", task instanceof DoTask);
     }
 
     @Test
-    public void testValidateNetworkSizeExceedsMaxNodes() {
-        Properties props = new Properties();
-        OpenInCytoscapeWebTaskFactoryImpl factory = createFactory(props);
+    public void testCreateTaskIteratorExceedsMaxEdges() {
+        ShowDialogUtil mockDialogUtil = mock(ShowDialogUtil.class);
+        CySwingApplication mockSwingApp = mock(CySwingApplication.class);
+        when(mockSwingApp.getJFrame()).thenReturn(mock(JFrame.class));
+        OpenInCytoscapeWebTaskFactoryImpl factory =
+                createFactory(new Properties(), mockDialogUtil, mockSwingApp);
 
-        String error = factory.validateNetworkSize(createMockNetwork(10001, 100));
-        assertNotNull(error);
-        assertTrue(error.contains("Nodes: 10001"));
-        assertTrue(error.contains("max: 10000"));
+        CyNetworkView mockView = createMockNetworkView(1L, 100, 20001);
+        TaskIterator result = factory.createTaskIterator(mockView);
+
+        verify(mockDialogUtil).showMessageDialog(any(), contains("Edges: 20001"));
+        verify(mockDialogUtil).showMessageDialog(any(), contains("max: 20000"));
+        Task task = result.next();
+        assertFalse("Expected no-op task, not DoTask", task instanceof DoTask);
     }
 
     @Test
-    public void testValidateNetworkSizeExceedsMaxEdges() {
-        Properties props = new Properties();
-        OpenInCytoscapeWebTaskFactoryImpl factory = createFactory(props);
+    public void testCreateTaskIteratorExceedsBothLimits() {
+        ShowDialogUtil mockDialogUtil = mock(ShowDialogUtil.class);
+        CySwingApplication mockSwingApp = mock(CySwingApplication.class);
+        when(mockSwingApp.getJFrame()).thenReturn(mock(JFrame.class));
+        OpenInCytoscapeWebTaskFactoryImpl factory =
+                createFactory(new Properties(), mockDialogUtil, mockSwingApp);
 
-        String error = factory.validateNetworkSize(createMockNetwork(100, 20001));
-        assertNotNull(error);
-        assertTrue(error.contains("Edges: 20001"));
-        assertTrue(error.contains("max: 20000"));
+        CyNetworkView mockView = createMockNetworkView(1L, 10001, 20001);
+        TaskIterator result = factory.createTaskIterator(mockView);
+
+        verify(mockDialogUtil).showMessageDialog(any(), contains("Nodes: 10001"));
+        verify(mockDialogUtil).showMessageDialog(any(), contains("Edges: 20001"));
+        Task task = result.next();
+        assertFalse("Expected no-op task, not DoTask", task instanceof DoTask);
     }
 
     @Test
-    public void testValidateNetworkSizeExceedsBoth() {
-        Properties props = new Properties();
-        OpenInCytoscapeWebTaskFactoryImpl factory = createFactory(props);
+    public void testCreateTaskIteratorWithCustomLimits() {
+        ShowDialogUtil mockDialogUtil = mock(ShowDialogUtil.class);
+        CySwingApplication mockSwingApp = mock(CySwingApplication.class);
+        when(mockSwingApp.getJFrame()).thenReturn(mock(JFrame.class));
 
-        String error = factory.validateNetworkSize(createMockNetwork(10001, 20001));
-        assertNotNull(error);
-        assertTrue(error.contains("Nodes: 10001"));
-        assertTrue(error.contains("Edges: 20001"));
-    }
-
-    @Test
-    public void testValidateNetworkSizeWithCustomLimits() {
         Properties props = new Properties();
         props.setProperty("network.max-nodes", "500");
         props.setProperty("network.max-edges", "1000");
-        OpenInCytoscapeWebTaskFactoryImpl factory = createFactory(props);
+        OpenInCytoscapeWebTaskFactoryImpl factory =
+                createFactory(props, mockDialogUtil, mockSwingApp);
 
         // Within custom limits
-        assertNull(factory.validateNetworkSize(createMockNetwork(500, 1000)));
+        CyNetworkView withinLimits = createMockNetworkView(1L, 500, 1000);
+        TaskIterator resultOk = factory.createTaskIterator(withinLimits);
+        Task taskOk = resultOk.next();
+        assertEquals(DoTask.class, taskOk.getClass());
 
         // Exceeds custom limits
-        String error = factory.validateNetworkSize(createMockNetwork(501, 1001));
-        assertNotNull(error);
-        assertTrue(error.contains("max: 500"));
-        assertTrue(error.contains("max: 1000"));
+        CyNetworkView exceedsLimits = createMockNetworkView(2L, 501, 1001);
+        TaskIterator resultFail = factory.createTaskIterator(exceedsLimits);
+
+        verify(mockDialogUtil).showMessageDialog(any(), contains("max: 500"));
+        verify(mockDialogUtil).showMessageDialog(any(), contains("max: 1000"));
+        Task taskFail = resultFail.next();
+        assertFalse("Expected no-op task, not DoTask", taskFail instanceof DoTask);
+    }
+
+    // --- URL validation test ---
+
+    @Test
+    public void testCreateTaskIteratorWithInvalidUrl() {
+        ShowDialogUtil mockDialogUtil = mock(ShowDialogUtil.class);
+        CySwingApplication mockSwingApp = mock(CySwingApplication.class);
+        when(mockSwingApp.getJFrame()).thenReturn(mock(JFrame.class));
+
+        Properties props = new Properties();
+        props.setProperty("cytoscapeweb.baseurl", "not a valid url");
+        OpenInCytoscapeWebTaskFactoryImpl factory =
+                createFactory(props, mockDialogUtil, mockSwingApp);
+
+        CyNetworkView mockView = createMockNetworkView(1L, 100, 200);
+        TaskIterator result = factory.createTaskIterator(mockView);
+
+        verify(mockDialogUtil).showMessageDialog(any(), contains("Invalid URL"));
+        Task task = result.next();
+        assertFalse("Expected no-op task, not DoTask", task instanceof DoTask);
     }
 }

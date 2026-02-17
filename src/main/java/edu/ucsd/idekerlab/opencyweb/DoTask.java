@@ -1,71 +1,58 @@
 package edu.ucsd.idekerlab.opencyweb;
 
 import java.awt.Desktop;
+import java.io.IOException;
 import java.net.URI;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import edu.ucsd.idekerlab.opencyweb.util.ShowDialogUtil;
-
-import org.cytoscape.application.swing.CySwingApplication;
 import org.cytoscape.model.CyNetwork;
 import org.cytoscape.work.AbstractTask;
 import org.cytoscape.work.TaskMonitor;
 
 /**
- * Task to open current network in Cytoscape Web
+ * Task to open current network in Cytoscape Web. Validation is performed by the factory before this
+ * task is created; this task only handles browser launching.
  *
  * @author churas
  */
 public class DoTask extends AbstractTask {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(DoTask.class);
-    private final CySwingApplication swingApplication;
-    private final ShowDialogUtil dialogUtil;
+
     private final Desktop desktop;
-    private CyNetwork network;
-    private String cytowebUrl;
+    private final CyNetwork network;
+    private final URI uri;
 
     /**
      * Constructor for DoTask
      *
-     * @param swingApplication Cytoscape Swing application
-     * @param dialogUtil Utility for showing dialogs
      * @param desktop Desktop instance for browser operations
      * @param network The network to be used
-     * @param cytowebUrl The URL for Cytoscape Web
+     * @param uri The validated URI for Cytoscape Web
      */
-    public DoTask(
-            CySwingApplication swingApplication,
-            ShowDialogUtil dialogUtil,
-            Desktop desktop,
-            CyNetwork network,
-            String cytowebUrl) {
-        this.swingApplication = swingApplication;
-        this.dialogUtil = dialogUtil;
+    public DoTask(Desktop desktop, CyNetwork network, URI uri) {
         this.desktop = desktop;
         this.network = network;
-        this.cytowebUrl = cytowebUrl;
+        this.uri = uri;
     }
 
     @Override
-    public void run(TaskMonitor taskMonitor) throws Exception {
+    public void run(TaskMonitor taskMonitor) {
         String suidStr = Long.toString(network.getSUID());
         LOGGER.info("Opening Network SUID: " + suidStr);
-        runQueryOnWebBrowser(cytowebUrl);
-    }
 
-    private void runQueryOnWebBrowser(String cytowebUrl) throws Exception {
         try {
-            LOGGER.info("Opening " + cytowebUrl + " in default browser");
-            desktop.browse(new URI(cytowebUrl));
-        } catch (Exception e) {
-            LOGGER.error("Unable to open default browser window to pass terms to iQuery", e);
-            dialogUtil.showMessageDialog(
-                    swingApplication.getJFrame(),
-                    "Default browser window could not be opened. Please copy/paste this link to your browser: "
-                            + cytowebUrl);
+            LOGGER.info("Opening " + uri + " in default browser");
+            desktop.browse(uri);
+        } catch (IOException e) {
+            LOGGER.error("Unable to open default browser window", e);
+            taskMonitor.showMessage(
+                    TaskMonitor.Level.ERROR,
+                    "Default browser window could not be opened."
+                            + " Please copy/paste this link to your browser: "
+                            + uri);
         }
     }
 }

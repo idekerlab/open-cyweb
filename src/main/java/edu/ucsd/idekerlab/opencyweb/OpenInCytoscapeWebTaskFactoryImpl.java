@@ -1,10 +1,15 @@
 package edu.ucsd.idekerlab.opencyweb;
 
 import java.awt.Desktop;
+import java.net.MalformedURLException;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.net.URL;
 import java.util.Collection;
 import java.util.Properties;
 
-import javax.swing.JOptionPane;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import edu.ucsd.idekerlab.opencyweb.util.ShowDialogUtil;
 
@@ -12,19 +17,23 @@ import org.cytoscape.application.CyApplicationManager;
 import org.cytoscape.application.swing.CySwingApplication;
 import org.cytoscape.model.CyNetwork;
 import org.cytoscape.property.CyProperty;
-import org.cytoscape.task.AbstractNodeViewTaskFactory;
 import org.cytoscape.task.NetworkCollectionTaskFactory;
-import org.cytoscape.task.NetworkViewTaskFactory;
 import org.cytoscape.view.model.CyNetworkView;
+import org.cytoscape.work.AbstractTask;
 import org.cytoscape.work.AbstractTaskFactory;
 import org.cytoscape.work.TaskIterator;
+import org.cytoscape.work.TaskMonitor;
 
 /**
- * Implementation of {@link NetworkViewTaskFactory} and {@link AbstractNodeViewTaskFactory} to send
- * members of specified node to iQuery
+ * Implementation of {@link NetworkCollectionTaskFactory} to open the current network in Cytoscape
+ * Web. Performs all validation (network size limits and URL) before task creation so that error
+ * dialogs are shown outside the task lifecycle.
  */
 public class OpenInCytoscapeWebTaskFactoryImpl extends AbstractTaskFactory
         implements NetworkCollectionTaskFactory {
+
+    private static final Logger LOGGER =
+            LoggerFactory.getLogger(OpenInCytoscapeWebTaskFactoryImpl.class);
 
     // Cytoscape Web URL template - placeholders are substituted at runtime from app properties
     private static final String CYTOSCAPE_WEB_URL_TEMPLATE =
@@ -34,7 +43,7 @@ public class OpenInCytoscapeWebTaskFactoryImpl extends AbstractTaskFactory
     static final String PROP_CYREST_PORT = "cyrest.port";
     static final String PROP_CYTOSCAPE_WEB_BASE_URL = "cytoscapeweb.baseurl";
 
-    // Network size limit property keys and defaults
+    // Network size limit property keys and defaults (moved from DoTask)
     static final String PROP_MAX_NODES = "network.max-nodes";
     static final String PROP_MAX_EDGES = "network.max-edges";
     private static final int DEFAULT_MAX_NODES = 10000;
@@ -89,44 +98,44 @@ public class OpenInCytoscapeWebTaskFactoryImpl extends AbstractTaskFactory
     }
 
     /**
-     * Creates a TaskIterator for opening the current network in Cytoscape Web. The URL is
-     * constructed using the network's SUID and the predefined URL template. If the URL is
-     * malformed, an error dialog will be shown.
+     * Creates a TaskIterator for opening the current network in Cytoscape Web. Validates network
+     * size limits and URL before creating the task. If validation fails, an error dialog is shown
+     * and a no-op task is returned (the framework requires a valid TaskIterator).
      *
      * @param networkView The CyNetworkView for which to create the task
-     * @return TaskIterator containing the DoTask to open the network in Cytoscape Web
+     * @return TaskIterator containing the DoTask to open the network, or a no-op task on validation
+     *     failure
      */
     public TaskIterator createTaskIterator(CyNetworkView networkView) {
         CyNetwork network = networkView.getModel();
 
+        // Validate network size
         String validationError = validateNetworkSize(network);
         if (validationError != null) {
-            dialogUtil.showMessageDialog(
-                    swingApplication.getJFrame(),
-                    validationError,
-                    "Open in Cytoscape Web",
-                    JOptionPane.ERROR_MESSAGE);
-            return new TaskIterator();
+            dialogUtil.showMessageDialog(swingApplication.getJFrame(), validationError);
+            return new TaskIterator(new NoOpTask());
         }
 
-        DoTask doTask =
-                new DoTask(
-                        swingApplication,
-                        dialogUtil,
-                        Desktop.getDesktop(),
-                        network,
-                        buildCytoscapeWebURI(network.getSUID()));
-        return new TaskIterator(doTask);
+        // Build and validate URL
+        String cytowebUrl = buildCytoscapeWebURI(network.getSUID());
+        URI uri;
+        try {
+            uri = new URL(cytowebUrl).toURI();
+        } catch (MalformedURLException | URISyntaxException e) {
+            LOGGER.error("Invalid Cytoscape Web URL: " + cytowebUrl, e);
+            dialogUtil.showMessageDialog(
+                    swingApplication.getJFrame(),
+                    "Invalid URL: "
+                            + cytowebUrl
+                            + "\n\nPlease check your settings in"
+                            + " Edit > Preferences > Properties (opencyweb).");
+            return new TaskIterator(new NoOpTask());
+        }
+
+        return new TaskIterator(new DoTask(Desktop.getDesktop(), network, uri));
     }
 
-    /**
-     * Validates that the network does not exceed the configured node and edge limits for web-based
-     * rendering.
-     *
-     * @param network The network to validate
-     * @return null if the network is within limits, or an error message string if exceeded
-     */
-    String validateNetworkSize(CyNetwork network) {
+    private String validateNetworkSize(CyNetwork network) {
         Properties props = cyProperties.getProperties();
         int maxNodes =
                 Integer.parseInt(
@@ -168,5 +177,13 @@ public class OpenInCytoscapeWebTaskFactoryImpl extends AbstractTaskFactory
                 .replace("${cytoscape_web_base_url}", baseUrl)
                 .replace("${cyrest_port}", cyrestPort)
                 .replace("${network_suid}", networkSuid.toString());
+    }
+
+    /** A no-op task returned when validation fails, to satisfy the TaskIterator contract. */
+    private static class NoOpTask extends AbstractTask {
+        @Override
+        public void run(TaskMonitor taskMonitor) {
+            // Intentionally empty — validation error was already shown via dialog
+        }
     }
 }
