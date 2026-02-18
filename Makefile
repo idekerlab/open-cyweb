@@ -1,30 +1,40 @@
 .PHONY: clean test coverage install updateversion docs help
 .DEFAULT_GOAL := help
 
-help: ## show this help message
-	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "%-20s %s\n", $$1, $$2}'
+help:
+	@echo "Usage: make [target]"
+	@echo ""
+	@echo "Targets:"
+	@echo "  clean          run mvn clean"
+	@echo "  test           run tests with mvn test"
+	@echo "  lint           check code formatting with Spotless"
+	@echo "  lint-fix       auto-fix Spotless formatting"
+	@echo "  coverage       check code coverage with jacoco (report: target/site/jacoco/index.html)"
+	@echo "  install        install the package to local repo"
+	@echo "  updateversion  updates version in pom.xml via maven command"
+	@echo "  docs           generate Sphinx HTML documentation (output: docs/_build/html/index.html)"
 
-clean: ## run mvn clean
+clean:
 	mvn clean
 
-test: clean ## run tests with mvn test
+test: clean
 	mvn test
 
-lint: ## run code linting with Spotless (report: target/site/spotless.html)
+lint:
 	mvn spotless:check	
 
-lint-fix: ## run code linting with Spotless (report: target/site/spotless.html)
+lint-fix:
 	mvn spotless:apply		
 
-coverage: ## check code coverage with jacoco (report: target/site/jacoco/index.html)
+coverage:
 	mvn test jacoco:report
 
-install: clean ## install the package to local repo
+install: clean
 	mvn install
 
-updateversion: ## updates version in pom.xml via maven command
+updateversion:
 	mvn versions:set
 
-docs: ## generate Sphinx HTML documentation (output: docs/_build/html/index.html)
+docs:
 	$(MAKE) -C docs clean
 	$(MAKE) -C docs html
