@@ -4,6 +4,8 @@
 
 	<properties>
 
+		<revision>1.0.0-SNAPSHOT</revision>
+
 		<bundle.symbolicName>edu.ucsd.idekerlab.opencyweb</bundle.symbolicName>
 		<bundle.namespace>edu.ucsd.idekerlab.opencyweb</bundle.namespace>
 
@@ -21,7 +23,7 @@
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>edu.ucsd.idekerlab</groupId>
 	<artifactId>open-cyweb</artifactId>
-	<version>1.0.0-SNAPSHOT</version>
+	<version>${revision}</version>
 	<packaging>bundle</packaging>
 	<name>OpenCytoscapeWeb</name>
 
