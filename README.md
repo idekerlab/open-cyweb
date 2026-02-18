@@ -35,6 +35,7 @@ Requirements to build (for developers)
 
 * [Java][java] 17 with jdk
 * [Maven][maven] 3.9 or above
+* X11 display (or `xvfb-run` on headless Linux) — tests use `java.awt.Desktop` which requires a display
 
 To build documentation
 

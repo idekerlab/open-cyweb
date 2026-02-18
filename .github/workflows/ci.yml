@@ -24,4 +24,4 @@ jobs:
         cache: 'maven'
     
     - name: Run tests
-      run: make test
+      run: xvfb-run make test
