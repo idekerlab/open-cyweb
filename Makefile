@@ -1,4 +1,4 @@
-.PHONY: clean test coverage install updateversion docs help
+.PHONY: clean test coverage install updateversion help
 .DEFAULT_GOAL := help
 
 help:
@@ -12,7 +12,6 @@ help:
 	@echo "  coverage       check code coverage with jacoco (report: target/site/jacoco/index.html)"
 	@echo "  install        install the package to local repo"
 	@echo "  updateversion  updates version in pom.xml via maven command"
-	@echo "  docs           generate Sphinx HTML documentation (output: docs/_build/html/index.html)"
 
 clean:
 	mvn clean
@@ -34,7 +33,3 @@ install: clean
 
 updateversion:
 	mvn versions:set
-
-docs:
-	$(MAKE) -C docs clean
-	$(MAKE) -C docs html

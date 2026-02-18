@@ -37,7 +37,14 @@ src/test/java/edu/ucsd/idekerlab/opencyweb/
 ├── DoTaskTest.java
 ├── OpenInCytoscapeWebActionTest.java
 └── OpenInCytoscapeWebTaskFactoryImplTest.java
+
+docs/
+├── Tutorial.md                                # Step-by-step getting started guide
+├── FAQ.md                                     # Frequently asked questions
+└── UserManual.md                              # Comprehensive reference documentation
 ```
+
+**Important:** Keep `docs/Tutorial.md`, `docs/FAQ.md`, and `docs/UserManual.md` up to date whenever code or functionality changes (e.g. new properties, validation behavior, UI actions).
 
 ## Key Patterns
 
