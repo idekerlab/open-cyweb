@@ -30,6 +30,7 @@ import org.cytoscape.work.swing.DialogTaskManager;
 public class CyActivator extends AbstractCyActivator {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(CyActivator.class);
+    private static final String CYTOSCAPE3_PROPERTY_GROUP = "cytoscape3.props";
 
     private BundleContext bundleContext;
 
@@ -87,12 +88,24 @@ public class CyActivator extends AbstractCyActivator {
         CyProperty<Properties> cyProperties =
                 getService(bundleContext, CyProperty.class, "(cyPropertyName=opencyweb.props)");
 
+        @SuppressWarnings("unchecked")
+        CyProperty<Properties> coreProperties =
+                getService(
+                        bundleContext,
+                        CyProperty.class,
+                        "(cyPropertyName=" + CYTOSCAPE3_PROPERTY_GROUP + ")");
+
         ShowDialogUtil dialogUtil = new ShowDialogUtil();
 
         // Create task factory for opening networks in Cytoscape Web
         OpenInCytoscapeWebTaskFactoryImpl openFac =
                 new OpenInCytoscapeWebTaskFactoryImpl(
-                        appManager, swingApplication, dialogUtil, cyProperties, writerManager);
+                        appManager,
+                        swingApplication,
+                        dialogUtil,
+                        cyProperties,
+                        coreProperties,
+                        writerManager);
 
         // Register right-click context menu action
         Properties openMenuProps = new Properties();

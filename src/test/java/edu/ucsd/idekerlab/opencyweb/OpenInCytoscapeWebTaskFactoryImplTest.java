@@ -83,28 +83,44 @@ public class OpenInCytoscapeWebTaskFactoryImplTest {
     @SuppressWarnings("unchecked")
     private OpenInCytoscapeWebTaskFactoryImpl createFactory(
             Properties props,
+            Properties coreProps,
             ShowDialogUtil dialogUtil,
             CySwingApplication swingApp,
             CyNetworkViewWriterManager writerManager) {
         CyApplicationManager mockAppManager = mock(CyApplicationManager.class);
         CyProperty<Properties> mockCyProps = mock(CyProperty.class);
         when(mockCyProps.getProperties()).thenReturn(props);
+        CyProperty<Properties> mockCoreCyProps = mock(CyProperty.class);
+        when(mockCoreCyProps.getProperties()).thenReturn(coreProps);
 
         return new OpenInCytoscapeWebTaskFactoryImpl(
-                mockAppManager, swingApp, dialogUtil, mockCyProps, writerManager);
+                mockAppManager, swingApp, dialogUtil, mockCyProps, mockCoreCyProps, writerManager);
     }
 
-    @SuppressWarnings("unchecked")
     private OpenInCytoscapeWebTaskFactoryImpl createFactory(
             Properties props, ShowDialogUtil dialogUtil, CySwingApplication swingApp) {
-        return createFactory(props, dialogUtil, swingApp, createMockWriterManager());
+        return createFactory(
+                props, new Properties(), dialogUtil, swingApp, createMockWriterManager());
     }
 
-    @SuppressWarnings("unchecked")
-    private OpenInCytoscapeWebTaskFactoryImpl createFactory(Properties props) {
+    private OpenInCytoscapeWebTaskFactoryImpl createFactory(
+            Properties props,
+            ShowDialogUtil dialogUtil,
+            CySwingApplication swingApp,
+            CyNetworkViewWriterManager writerManager) {
+        return createFactory(props, new Properties(), dialogUtil, swingApp, writerManager);
+    }
+
+    private OpenInCytoscapeWebTaskFactoryImpl createFactory(
+            Properties props, Properties coreProps) {
         CySwingApplication mockSwingApp = mock(CySwingApplication.class);
         ShowDialogUtil mockDialogUtil = mock(ShowDialogUtil.class);
-        return createFactory(props, mockDialogUtil, mockSwingApp, createMockWriterManager());
+        return createFactory(
+                props, coreProps, mockDialogUtil, mockSwingApp, createMockWriterManager());
+    }
+
+    private OpenInCytoscapeWebTaskFactoryImpl createFactory(Properties props) {
+        return createFactory(props, new Properties());
     }
 
     private static CyNetworkView createMockNetworkView(long suid, int nodeCount, int edgeCount) {
@@ -134,9 +150,10 @@ public class OpenInCytoscapeWebTaskFactoryImplTest {
     @Test
     public void testBuildCytoscapeWebURIWithCustomProperties() {
         Properties props = new Properties();
-        props.setProperty("cyrest.port", "5678");
         props.setProperty("cytoscapeweb.baseurl", "https://custom.example.com");
-        OpenInCytoscapeWebTaskFactoryImpl factory = createFactory(props);
+        Properties coreProps = new Properties();
+        coreProps.setProperty("rest.port", "5678");
+        OpenInCytoscapeWebTaskFactoryImpl factory = createFactory(props, coreProps);
 
         String url = factory.buildCytoscapeWebURI(42L);
         assertEquals(
@@ -145,11 +162,11 @@ public class OpenInCytoscapeWebTaskFactoryImplTest {
     }
 
     @Test
-    public void testBuildCytoscapeWebURIWithPartialCustomProperties() {
+    public void testBuildCytoscapeWebURIWithCustomPort() {
         Properties props = new Properties();
-        props.setProperty("cyrest.port", "9999");
-        // cytoscapeweb.baseurl not set - should use default
-        OpenInCytoscapeWebTaskFactoryImpl factory = createFactory(props);
+        Properties coreProps = new Properties();
+        coreProps.setProperty("rest.port", "9999");
+        OpenInCytoscapeWebTaskFactoryImpl factory = createFactory(props, coreProps);
 
         String url = factory.buildCytoscapeWebURI(100L);
         assertEquals(

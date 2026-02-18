@@ -1,4 +1,3 @@
-cyrest.port=1234
 cytoscapeweb.baseurl=https://web.cytoscape.org
 network.max-elements=26000
 network.max-edges=20000

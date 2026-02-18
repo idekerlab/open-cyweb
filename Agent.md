@@ -42,7 +42,7 @@ src/test/java/edu/ucsd/idekerlab/opencyweb/
 ## Key Patterns
 
 ### OSGi Service Registration
-`CyActivator` extends `AbstractCyActivator`. Services are registered in `initializeApp()` which is called after `AppsFinishedStartingEvent` to ensure logging infrastructure is ready. Use `getService()` to retrieve and `registerService()`/`registerAllServices()` to register. The activator retrieves `CyNetworkViewWriterManager` for file size measurement and passes it to the task factory.
+`CyActivator` extends `AbstractCyActivator`. Services are registered in `initializeApp()` which is called after `AppsFinishedStartingEvent` to ensure logging infrastructure is ready. Use `getService()` to retrieve and `registerService()`/`registerAllServices()` to register. The activator retrieves `CyNetworkViewWriterManager` for file size measurement and the Cytoscape core `CyProperty` (via `CYTOSCAPE3_PROPERTY_GROUP` constant, filter `"(cyPropertyName=cytoscape3.props)"`) for reading `rest.port`, and passes both to the task factory.
 
 ### App Properties (CyProperty)
 Properties are managed via the Cytoscape `CyProperty` pattern:
@@ -52,15 +52,20 @@ Properties are managed via the Cytoscape `CyProperty` pattern:
 - Property keys use short names — the group scope is provided by the CyProperty service name
 - Pass `CyProperty<Properties>` references (not raw values) so runtime edits via Preferences take effect immediately
 
-**Properties:**
+**App Properties (opencyweb group):**
 
 | Key | Default | Description |
 |-----|---------|-------------|
-| `cyrest.port` | `1234` | Local CyREST server port |
 | `cytoscapeweb.baseurl` | `https://web.cytoscape.org` | Cytoscape Web base URL |
 | `network.max-elements` | `26000` | Max total elements (nodes + edges) allowed |
 | `network.max-edges` | `20000` | Max edge count allowed |
 | `network.max-filesize-mb` | `10.000` | Max CX2 export file size in MB (supports decimal values) |
+
+**Core Cytoscape Properties (cytoscape3 group, read-only from this app):**
+
+| Key | Default | Description |
+|-----|---------|-------------|
+| `rest.port` | `1234` | CyREST server port (managed by Cytoscape, not by this app) |
 
 The `network.max-filesize-mb` property is automatically normalized to at least 3 decimal places using `BigDecimal` (e.g. `10` → `10.000`, `.5` → `0.500`). Values with 3+ decimal places are kept as-is.
 
@@ -73,7 +78,7 @@ The `network.max-filesize-mb` property is automatically normalized to at least 3
 If any check fails, an error dialog is shown with specific threshold details and a `NoOpTask` is returned. If the CX2 writer is unavailable (e.g. CX Support app not installed) or serialization fails, the file size check is skipped (fail-open).
 
 ### URL Template
-`OpenInCytoscapeWebTaskFactoryImpl` builds the Cytoscape Web URL from a template with three placeholders (`${cytoscape_web_base_url}`, `${cyrest_port}`, `${network_suid}`). The first two are resolved from app properties; the third from the network SUID at runtime.
+`OpenInCytoscapeWebTaskFactoryImpl` builds the Cytoscape Web URL from a template with three placeholders (`${cytoscape_web_base_url}`, `${cyrest_port}`, `${network_suid}`). The base URL is resolved from app properties (opencyweb), the CyREST port from Cytoscape core properties (cytoscape3), and the network SUID from the network at runtime.
 
 ### Testing
 - JUnit 4 + Mockito 3.2

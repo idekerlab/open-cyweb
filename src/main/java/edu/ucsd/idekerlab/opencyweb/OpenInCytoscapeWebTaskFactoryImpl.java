@@ -45,8 +45,8 @@ public class OpenInCytoscapeWebTaskFactoryImpl extends AbstractTaskFactory
     private static final String CYTOSCAPE_WEB_URL_TEMPLATE =
             "${cytoscape_web_base_url}?import=http://localhost:${cyrest_port}/v1/networks/${network_suid}.cx?version=2";
 
-    // Property keys (short names, scoped under the "opencyweb" CyProperty group)
-    static final String PROP_CYREST_PORT = "cyrest.port";
+    // Property key for CyREST port (read from Cytoscape core "cytoscape3" properties)
+    static final String PROP_CYREST_PORT = "rest.port";
     static final String PROP_CYTOSCAPE_WEB_BASE_URL = "cytoscapeweb.baseurl";
 
     // Network validation property keys and defaults
@@ -65,6 +65,7 @@ public class OpenInCytoscapeWebTaskFactoryImpl extends AbstractTaskFactory
     private final ShowDialogUtil dialogUtil;
     private final CySwingApplication swingApplication;
     private final CyProperty<Properties> cyProperties;
+    private final CyProperty<Properties> coreProperties;
     private final CyNetworkViewWriterManager writerManager;
 
     /**
@@ -74,6 +75,7 @@ public class OpenInCytoscapeWebTaskFactoryImpl extends AbstractTaskFactory
      * @param swingApplication Cytoscape Swing application
      * @param dialogUtil Utility for showing dialogs
      * @param cyProperties App properties from opencyweb.props (editable via Edit > Preferences)
+     * @param coreProperties Cytoscape core properties from cytoscape3.props (provides rest.port)
      * @param writerManager Cytoscape network view writer manager for measuring export size
      */
     public OpenInCytoscapeWebTaskFactoryImpl(
@@ -81,11 +83,13 @@ public class OpenInCytoscapeWebTaskFactoryImpl extends AbstractTaskFactory
             CySwingApplication swingApplication,
             ShowDialogUtil dialogUtil,
             CyProperty<Properties> cyProperties,
+            CyProperty<Properties> coreProperties,
             CyNetworkViewWriterManager writerManager) {
         this.appManager = appManager;
         this.swingApplication = swingApplication;
         this.dialogUtil = dialogUtil;
         this.cyProperties = cyProperties;
+        this.coreProperties = coreProperties;
         this.writerManager = writerManager;
     }
 
@@ -273,8 +277,9 @@ public class OpenInCytoscapeWebTaskFactoryImpl extends AbstractTaskFactory
     }
 
     String buildCytoscapeWebURI(Long networkSuid) {
+        Properties coreProps = coreProperties.getProperties();
+        String cyrestPort = coreProps.getProperty(PROP_CYREST_PORT, DEFAULT_CYREST_PORT);
         Properties props = cyProperties.getProperties();
-        String cyrestPort = props.getProperty(PROP_CYREST_PORT, DEFAULT_CYREST_PORT);
         String baseUrl =
                 props.getProperty(PROP_CYTOSCAPE_WEB_BASE_URL, DEFAULT_CYTOSCAPE_WEB_BASE_URL);
 
