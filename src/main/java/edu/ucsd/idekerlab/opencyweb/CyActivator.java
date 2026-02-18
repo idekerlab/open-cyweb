@@ -18,6 +18,7 @@ import org.cytoscape.app.event.AppsFinishedStartingListener;
 import org.cytoscape.application.CyApplicationManager;
 import org.cytoscape.application.swing.CyAction;
 import org.cytoscape.application.swing.CySwingApplication;
+import org.cytoscape.io.write.CyNetworkViewWriterManager;
 import org.cytoscape.model.events.NetworkAddedListener;
 import org.cytoscape.model.events.NetworkDestroyedListener;
 import org.cytoscape.property.AbstractConfigDirPropsReader;
@@ -73,6 +74,8 @@ public class CyActivator extends AbstractCyActivator {
         final CyApplicationManager appManager =
                 getService(bundleContext, CyApplicationManager.class);
         final DialogTaskManager taskManager = getService(bundleContext, DialogTaskManager.class);
+        final CyNetworkViewWriterManager writerManager =
+                getService(bundleContext, CyNetworkViewWriterManager.class);
 
         // Register app properties so users can view and edit in Edit > Preferences > Properties
         PropsReader propsReader = new PropsReader("opencyweb", "opencyweb.props");
@@ -89,7 +92,7 @@ public class CyActivator extends AbstractCyActivator {
         // Create task factory for opening networks in Cytoscape Web
         OpenInCytoscapeWebTaskFactoryImpl openFac =
                 new OpenInCytoscapeWebTaskFactoryImpl(
-                        appManager, swingApplication, dialogUtil, cyProperties);
+                        appManager, swingApplication, dialogUtil, cyProperties, writerManager);
 
         // Register right-click context menu action
         Properties openMenuProps = new Properties();
