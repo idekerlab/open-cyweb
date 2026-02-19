@@ -3,10 +3,10 @@ name: Continuous Integration
 on:
   push:
     branches:
-      - '**'  # Run on push to any branch
+      - main  # Run on merge to main
   pull_request:
     branches:
-      - main  # Run on PRs to main
+      - main  # Run on PR updates targeting main
 
 jobs:
   test:
